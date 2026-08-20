@@ -96,6 +96,40 @@ async function run() {
       res.send(result);
     });
 
+    // api to get all tickets by admin
+    app.get("/api/admin/tickets", async (req, res) => {
+      const result = await ticketsCollection.find({}).toArray();
+      res.send(result);
+    });
+
+
+    // api to update ticket status by admin
+    app.patch("/api/admin/tickets/update/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { status: updatedStatus } = req.body;
+
+        if (!id || !ObjectId.isValid(id)) {
+          return res
+            .status(400)
+            .json({ error: "Invalid or missing ticket ID" });
+        }
+
+        const query = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            status: updatedStatus,
+          },
+        };
+
+        const result = await ticketsCollection.updateOne(query, updateDoc);
+        return res.json(result);
+      } catch (error) {
+        console.error("Failed to update ticket status:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
+      }
+    });
+
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
     console.log(
