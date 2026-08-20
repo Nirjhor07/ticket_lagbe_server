@@ -50,7 +50,7 @@ async function run() {
       const ticket = req.body;
       const newTicket = {
         ...ticket,
-        crteatedAt: new Date(),
+        createdAt: new Date(),
       };
       const result = await ticketsCollection.insertOne(newTicket);
       //   console.log(`A document was inserted with the _id: ${result.insertedId}`);
@@ -75,8 +75,26 @@ async function run() {
       res.send(result);
     });
 
-    
+    // api for update vendor ticket by vendor
+    app.patch("/api/vendor/tickets/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedTicket = { ...req.body };
 
+      // immutable fields
+      delete updatedTicket._id;
+      delete updatedTicket.updatedAt;
+
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          ...updatedTicket,
+          updatedAt: new Date(),
+        },
+      };
+
+      const result = await ticketsCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
