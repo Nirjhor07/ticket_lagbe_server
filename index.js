@@ -48,10 +48,35 @@ async function run() {
     // create ticket post apis
     app.post("/api/tickets", async (req, res) => {
       const ticket = req.body;
-      const result = await ticketsCollection.insertOne(ticket);
+      const newTicket = {
+        ...ticket,
+        crteatedAt: new Date(),
+      };
+      const result = await ticketsCollection.insertOne(newTicket);
       //   console.log(`A document was inserted with the _id: ${result.insertedId}`);
       res.send(result);
     });
+
+    // api to get vendors tickets
+    app.get("/api/vendor/tickets", async (req, res) => {
+      const query = {};
+      if (req.query.vendorId) {
+        query.vendorId = req.query.vendorId;
+      }
+      const result = await ticketsCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // delete api to delete ticket by id
+    app.delete("/api/vendor/tickets/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await ticketsCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    
+
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
