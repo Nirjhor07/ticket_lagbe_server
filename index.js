@@ -43,6 +43,15 @@ async function run() {
     //my collections
     const db = client.db(process.env.MONGODB_NAME);
     // collections for api
+    const ticketsCollection = db.collection("tickets");
+
+    // create ticket post apis
+    app.post("/api/tickets", async (req, res) => {
+      const ticket = req.body;
+      const result = await ticketsCollection.insertOne(ticket);
+      //   console.log(`A document was inserted with the _id: ${result.insertedId}`);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
