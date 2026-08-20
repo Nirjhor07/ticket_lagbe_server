@@ -44,6 +44,7 @@ async function run() {
     const db = client.db(process.env.MONGODB_NAME);
     // collections for api
     const ticketsCollection = db.collection("tickets");
+    const bookedTicketsCollection = db.collection("bookedTickets");
 
     // create ticket post apis
     app.post("/api/tickets", async (req, res) => {
@@ -102,7 +103,6 @@ async function run() {
       res.send(result);
     });
 
-
     // api to update ticket status by admin
     app.patch("/api/admin/tickets/update/:id", async (req, res) => {
       try {
@@ -128,6 +128,36 @@ async function run() {
         console.error("Failed to update ticket status:", error);
         return res.status(500).json({ error: "Internal Server Error" });
       }
+    });
+
+    // all tickets where status is approved
+    app.get("/api/all/tickets/approved", async (req, res) => {
+      try {
+        const result = await ticketsCollection
+          .find({ status: "approved" })
+          .toArray();
+        res.send(result);
+      } catch (error) {
+        console.error("Failed to fetch approved tickets:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+      }
+    });
+
+    // get single ticket for details by ticket id
+    app.get("/api/tickets/:id", async (req, res) => {
+      const { id } = req.params;
+      // console.log("Fetching ticket with ID:", id);
+      const query = { _id: new ObjectId(id) };
+      const ticket = await ticketsCollection.findOne(query);
+      res.send(ticket);
+    });
+
+    //api to post booked ticket by user
+    app.post("/api/booked/tickets", async (req, res) => {
+      const bookedTicket = req.body;
+      const newBookedTicket = { ...bookedTicket, bookedAt: new Date() };
+      const result = await bookedTicketsCollection.insertOne(newBookedTicket);
+      res.send(result);
     });
 
     // Send a ping to confirm a successful connection
