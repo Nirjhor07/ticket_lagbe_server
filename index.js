@@ -107,7 +107,7 @@ async function run() {
     app.patch("/api/admin/tickets/update/:id", async (req, res) => {
       try {
         const { id } = req.params;
-        const { status: updatedStatus } = req.body;
+        const { status, advertisementStatus } = req.body;
 
         if (!id || !ObjectId.isValid(id)) {
           return res
@@ -115,11 +115,27 @@ async function run() {
             .json({ error: "Invalid or missing ticket ID" });
         }
 
+        // Dynamic update object
+        const updateFields = {};
+
+        if (status !== undefined) {
+          updateFields.status = status;
+        }
+
+        if (advertisementStatus !== undefined) {
+          updateFields.advertisementStatus = advertisementStatus;
+        }
+
+        // Checking if at least one field is provided
+        if (Object.keys(updateFields).length === 0) {
+          return res
+            .status(400)
+            .json({ error: "No valid fields provided for update" });
+        }
+
         const query = { _id: new ObjectId(id) };
         const updateDoc = {
-          $set: {
-            status: updatedStatus,
-          },
+          $set: updateFields,
         };
 
         const result = await ticketsCollection.updateOne(query, updateDoc);
@@ -143,6 +159,19 @@ async function run() {
       }
     });
 
+    // all tickets where status is active advertisementStatus is active
+    app.get("/api/all/tickets/active", async (req, res) => {
+      try {
+        const result = await ticketsCollection
+          .find({ advertisementStatus: "active" })
+          .toArray();
+        res.send(result);
+      } catch (error) {
+        console.error("Failed to fetch active tickets:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+      }
+    });
+
     // get single ticket for details by ticket id
     app.get("/api/tickets/:id", async (req, res) => {
       const { id } = req.params;
@@ -158,6 +187,62 @@ async function run() {
       const newBookedTicket = { ...bookedTicket, bookedAt: new Date() };
       const result = await bookedTicketsCollection.insertOne(newBookedTicket);
       res.send(result);
+    });
+
+    // get api for booked tickets by userId
+    app.get("/api/my/booked/tickets", async (req, res) => {
+      const query = {};
+      if (req.query.userId) {
+        query.bookedBy = req.query.userId;
+      }
+      const result = await bookedTicketsCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // api for get all booked tickets for vendor
+    app.get("/api/vendor/booked/tickets", async (req, res) => {
+      const query = {};
+      if (req.query.vendorId) {
+        query.vendorId = req.query.vendorId;
+      }
+      const result = await bookedTicketsCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    //api to update booked ticket status by vendor
+    app.patch("/api/vendor/tickets/update/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { status: updatedStatus } = req.body;
+        console.log(
+          "Updating ticket with ID:",
+          id,
+          "to status:",
+          updatedStatus,
+        );
+
+        if (!id || !ObjectId.isValid(id)) {
+          return res
+            .status(400)
+            .json({ error: "Invalid or missing ticket ID" });
+        }
+
+        const query = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            status: updatedStatus,
+          },
+        };
+
+        const result = await bookedTicketsCollection.updateOne(
+          query,
+          updateDoc,
+        );
+        return res.json(result);
+      } catch (error) {
+        console.error("Failed to update ticket status:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
+      }
     });
 
     // Send a ping to confirm a successful connection
