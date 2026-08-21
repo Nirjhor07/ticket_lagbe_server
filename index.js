@@ -245,6 +245,21 @@ async function run() {
       }
     });
 
+    //api to get all latest 6 tickets for home page
+    app.get("/api/latest/tickets", async (req, res) => {
+      try {
+        const result = await ticketsCollection
+          .find({})
+          .sort({ createdAt: -1 })
+          .limit(6)
+          .toArray();
+        res.send(result);
+      } catch (error) {
+        console.error("Failed to fetch latest tickets:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+      }
+    });
+
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
     console.log(
