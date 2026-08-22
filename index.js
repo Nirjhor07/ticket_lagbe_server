@@ -45,6 +45,7 @@ async function run() {
     // collections for api
     const ticketsCollection = db.collection("tickets");
     const bookedTicketsCollection = db.collection("bookedTickets");
+    const userTransitionCollection = db.collection("userTransition");
 
     // create ticket post apis
     app.post("/api/tickets", async (req, res) => {
@@ -258,6 +259,24 @@ async function run() {
         console.error("Failed to fetch latest tickets:", error);
         res.status(500).json({ error: "Internal Server Error" });
       }
+    });
+
+    //api for user transition collection
+    app.post("/api/checkout_sessions", async (req, res) => {
+      const sessionData = req.body;
+      const newSession = { ...sessionData, createdAt: new Date() };
+      const result = await userTransitionCollection.insertOne(newSession);
+      res.send(result);
+    });
+
+    //api to get all the transition by userId
+    app.get("/api/user/transition", async (req, res) => {
+      const query = {};
+      if (req.query.userId) {
+        query.userId = req.query.userId;
+      }
+      const result = await userTransitionCollection.find(query).toArray();
+      res.send(result);
     });
 
     // Send a ping to confirm a successful connection
